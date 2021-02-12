@@ -1,0 +1,23 @@
+# Contextualize
+
+## Getting external data
+
+Incidents of violent events rarely occur alone. They are part of a society, a political climate or an armed conflict. Comparing incidents with other data can help testing hypothesis - that may potentially save lives. A few examples:
+
+* A party to an armed conflict uses heavy weaponry in densely populated areas. Looking at these incidents together with population density may reveal a pattern or help prove an intention. 
+* Violence against a minority may occur in places where a particular party gains high votes. 
+* Outbreaks of violence may have something to do with road accessibility in harsh weather conditions of a specific season. 
+
+Do not confuse correlation and causation. 
+
+The purpose of this chapter is to give the right pieces of information to people who need to decide about actions (humanitarian interventions, counselling activities for victims of racist violence). These decision-makers base their decisions on evidence - and a wide vision of the context would be helpful. 
+
+
+## Examples fo external data
+
+* Geospatial data
+  * GiscoR
+  * 
+* Population density
+* Facebook social connectedness
+* 

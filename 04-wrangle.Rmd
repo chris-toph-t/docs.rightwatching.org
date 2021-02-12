@@ -1,0 +1,38 @@
+# Wrangle
+
+This chapter shows how to get incident data into a tidy data format: each row is one incident (observation), each column is one attribute of the incident (variable). Incident data can be a tricky to get tidy. 
+
+
+## Import incidents
+
+### Regular Import
+
+* with readr
+
+### Scraping
+
+
+## Clean incidents
+
+### Extract dates
+
+#### Your dates are in a mixed format
+
+#### Summarising dates
+
+* lubridate::month()
+
+### Source classification
+
+* keeping a classification file or logic. Anything containing Zeitung becomes news. 
+* exploding urls and keep only tlds. 
+
+### Geocoding
+
+* Prepare placestring
+* use udpipe to annotate text and get location names (not really possible, udpipe gives only proper nouns)
+* Geocoding function for nominatim or self-hosted instance
+
+## Summarise Incidents
+
+* just summarise and groupy_by

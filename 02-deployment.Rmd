@@ -1,0 +1,88 @@
+# Deployment
+
+This section  shows you how to deploy an instance of the rightwatching shiny app. The app
+* gathers statistics relevant to far-right and racist violence
+* obtains data of far-right and racist violence, either via an API or scraping
+* visualises incidents together with relevant statistics
+
+## Container I: Get data
+
+The first docker container contains all files that need to be fetched for a smooth shiny app experience. This container is not exposed to the user, it only saves data weekly in Rdata files. 
+
+General process: 
+* Building the docker image, based rocker images
+* run the container with cronjob, mounting two volumes: 
+  * volume to store the data, /data
+  * volume where R scripts live
+
+### Build Image
+
+This dockerfile builds the image.
+
+```{bash, eval=FALSE}
+FROM rocker/geospatial:4.0.3
+
+MAINTAINER Rightwatching "info@rightwatching.org"
+
+WORKDIR /srv/prepare/
+
+# install dependencies of the app
+RUN R -e "install.packages(c('jsonlite', 'osmdata', 'htmltools', 'rvest', 'xml2', 'httr', 'tryCatchLog', 'futile.logger', 'hrbrthemes', 'viridis', 'lubridate', 'ggspatial', 'quanteda', 'ggrepel', 'wordcloud', 'librarian', 'tm'), repos='https://cloud.r-project.org/')"
+
+RUN R -e "librarian::shelf(CorrelAid/datenguideR, dieghernan/giscoR)"
+
+#for dates, give proper locale
+RUN locale-gen de_DE.UTF-8 && \
+    update-locale
+
+#run scripts with nonroot users. rstudio user already set up in rocker images
+RUN chown -R rstudio:rstudio /srv/
+
+#copy prep scripts to container workdir
+#COPY ./ ./
+
+USER rstudio
+
+#define what to run when container starts: the full prepare script is launched
+CMD Rscript --verbose /srv/prepare/prepare.R
+```
+
+### Run Container
+
+We mount two volumes into the container: one to store and retrieve data, one with all scripts. 
+
+Code to adjust before running: 
+
+* if you are using a public instance of nominatim you must change the api url in def_geocode and you can omit the `--net geocode` flag. This will take considerably longer as your script should sleep for 1 second when calling public nominatim instances.
+* the script getexternaldata.R uses two Germany-specific sources: datenguideR and a dataset of historic election results. All other datasets are from Eurostat via GiscoR and should be reproducible to other EU countries
+* to get the German historic election dataset you must register and download it from here
+
+
+```{bash, eval=FALSE}
+cd this/repo/on/your/host
+docker run --rm --net geocode -v ./repo/data:/srv/data -v ./prepare:/srv/prepare shiny-report-prepare
+```
+
+
+
+
+## Container II: Visualise Data
+
+All code for this task resides [in this repository](https://github.com/chris-toph-t/rightwatching-shiny-app). The goal is to create a shiny app that consumes data from the previous step and visualizes it. 
+
+### Build Image
+
+* Build the image based on [the dockerfile](https://github.com/chris-toph-t/rightwatching-shiny-app/blob/main/Dockerfile) with `docker build . -t rightwatching`
+* ensure that in the /data folder you have the Rdata files from the previous step.
+* In a production environment you may want to launch the app with shinyproxy. Proceed to the next step. 
+
+
+### Run Container
+
+* You can launch the app by manually running the docker container. It will listen on port 3838. 
+
+## Container III: User login
+
+In the tools direcotry of the same repository you can find the shinyproxy Dockerfile and Config.yml file. These are needed for shinyproxy to launch the app.  
+
+## Container IV: SSL Encryption

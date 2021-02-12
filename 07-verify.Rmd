@@ -1,0 +1,9 @@
+# Verify Data
+
+## Checking for NA values
+
+### skimr and narniar for plotting
+
+### Refer to Sankey chart in visualize section
+
+### Plot maps on categories

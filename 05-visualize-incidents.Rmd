@@ -1,0 +1,16 @@
+# Visualize Incidents
+
+## Historgram
+* parsed dates
+
+
+## Hexbin Map
+* locations as lat lon
+
+
+## Wordcloud sources
+* source column
+
+
+## Sankey Chart
+* categories, e.g. type of incident and type of source
