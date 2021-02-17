@@ -10,7 +10,7 @@ Incidents of violent events rarely occur alone. They are part of a society, a po
 
 Do not confuse correlation and causation. 
 
-The purpose of this chapter is to give the right pieces of information to people who need to decide about actions (humanitarian interventions, counselling activities for victims of racist violence). These decision-makers base their decisions on evidence - and a wide vision of the context would be helpful. 
+The purpose of this chapter is to give the right pieces of information to people who need to decide about actions (humanitarian interventions, counselling activities for victims of racist violence). These decision-makers base their decisions on evidence - and a wide vision of the context is usually helpful. 
 
 
 ## Examples fo external data
@@ -22,14 +22,102 @@ The purpose of this chapter is to give the right pieces of information to people
 * Facebook social connectedness
 * 
 
+## Loading Populalation Density (Europe)
+
+For Europe, population density data can be obtained from EU's GISCO. This script downloads a zip file, unzips it and places the contents in a data directory below your current RProj directory. 
+
 ```{r}
-library(giscoR)
-admin_boundaries <- gisco_get_nuts(nuts_level = "3", country = "DEU", resolution = "03", cache = TRUE, update_cache = TRUE) %>%
-      # select counties of only one federal state
-      filter(kreise, str_detect(NUTS_ID, "DEG"))
+# adjust resolution to 1 if you have bandwidth and disk space
+pop_grid <- giscoR::gisco_get_grid(resolution = 10)
 
-votes_data <- dg_call(nuts_nr = "3", stat_name = "WAHL09", substat_name = "PART04", year = "2017", parent_chr = bundesland)
-voters_data <- dg_call(nuts_nr = "3", stat_name = "WAHL01", year = "2017", parent_chr = bundesland)
 
+pop_grid_filtered <- pop_grid %>%
+  filter(NUTS2016_0 == "DE") %>%
+  filter(NUTS2016_1 == "DEG")
+    
+```
+
+With the grid loaded, we can proceed and plot population density below our geocoded incidents:
+
+```{r}
+ggplot() +
+  # population density is mapped to transparency here, otherwise you cannot have two different fill color scales
+  geom_sf(data = pop_grid_filtered, aes(alpha = TOT_P_2011), fill = "Blue", lwd=0) +
+  stat_bin_hex(data = chronicle, aes(x = lon, y = lat, fill = ..count..), alpha = 0.8, binwidth = 0.05) +
+  scale_fill_viridis(option = "C", direction = -1) +
+  labs(alpha = "Population Density", fill = "Incidents in Chronicle")
+
+
+```
+
+## Loading Facebook social connectedness Index
+
+This book is primarily written to help analyze data on racist and right-wing violence. When looking at such incidents in a region, it can be insightful to see where facebook users in this region have friends, i.e. using facebook friendships as a proxy for openness and connectedness. Facebook publishes this data in the form of social connectedness index. 
+
+Head to the [humanitarian data exchange](https://data.humdata.org/dataset/social-connectedness-index), download the dataset gadm1_nuts3_counties_gadm1_nuts3_counties and unzip. 
+
+```{r}
+library(giscoR, tidyverse)
+giscoR::gisco_get_nuts(nuts_level = "3",   
+                       year = "2016",
+                       epsg = "3035",
+                       resolution = 20) -> nuts
+
+connectedness <- readr::read_tsv(file.path("..", "..", "044_SocialCohesion", "gadm1_nuts3_counties_gadm1_nuts3_counties_Aug2020.tsv"))
+
+```
+
+The dataset has three columns: the NUTS ID of the user, the NUTS ID of the friend and the social connectedness index between the two. We are interested in computing how likely are people from one specific area (like a federal state) to have friends 
+
+* in the same country?
+* in another European country?
+* in the world? 
+
+
+
+```{r}
+
+# filter to administrative region of interest
+connectedness_regional <- connectedness %>%
+  filter(str_detect(user_loc, "^DE"))
+
+# classify friend location in three groups and summarise by these and user location
+regional_summary <- connectedness_regional %>%
+  mutate(fr_country = str_extract(fr_loc, "^[A-Z]{2}")) %>%
+  mutate(fr_category = case_when(fr_country == "DE" ~ "in-country",
+                                 fr_country %in% eu_list ~ "in-continent",
+                                 TRUE ~ "world"
+                                 )) %>%
+  group_by(user_loc, fr_category) %>%
+  summarise(avg_scaled_sci = sum(scaled_sci))
+
+
+```
+
+This will yield a shorter table, where each administrative unit of our users only appears three times. The numeric value of sum_scaled_sci is less less telling here - it only serves as indicator. Check the [guidance note](https://data.humdata.org/dataset/social-connectedness-index) on how the SCI is calculated. 
+
+
+```{r}
+# create a list of european countries in ISO2 format
+eu_list <-  unique(str_extract(nuts$NUTS_ID, "^[A-Z]{2}"))
+
+nuts_regional <- nuts %>% 
+  filter(str_detect(NUTS_ID, "^DE2")) %>%
+  left_join(regional_summary, by = c("NUTS_ID" = "user_loc"))
+
+
+nuts_regional %>%
+  st_transform("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs") %>%
+  filter(fr_category == "in-continent") %>%
+  ggplot() +
+      geom_sf(aes(fill = avg_scaled_sci, group = fr_category), colour="#ADADAD", size=0.1) +
+      labs(fill = "AVG SCI") +
+      theme_void() +
+      scale_fill_viridis_c() +
+      theme(legend.title = element_blank(), 
+            legend.text  = element_text(size = 8),
+            legend.key.size = unit(0.8, "lines"),
+            legend.position = "bottom", legend.box = "horizontal") +
+    guides(fill = guide_legend(nrow = 1, title.hjust = 0.5))
 ```
 

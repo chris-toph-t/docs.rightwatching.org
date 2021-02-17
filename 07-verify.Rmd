@@ -7,3 +7,5 @@
 ### Refer to Sankey chart in visualize section
 
 ### Plot maps on categories
+
+## Plot Source Category Map

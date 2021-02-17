@@ -25,7 +25,7 @@ Once each incident has a latitude and longitude you can plot the density of inci
 # for admin boundaries underneath the incidents we need the shape of admin boundaries. this gets county admin levels for Germany
 admin_boundaries <- giscoR::gisco_get_nuts(nuts_level = "3", country = "DEU", resolution = "03", cache = TRUE, update_cache = TRUE) %>%
       # select counties of only one federal state
-      filter(kreise, str_detect(NUTS_ID, "DEG"))
+      filter(str_detect(NUTS_ID, "DEG"))
 
 make_hexbinmap <- function () {
   ggplot() +
