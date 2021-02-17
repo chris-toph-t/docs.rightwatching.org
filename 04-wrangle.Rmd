@@ -2,36 +2,266 @@
 
 This chapter shows how to get incident data into a tidy data format: each row is one incident (observation), each column is one attribute of the incident (variable). Incident data can be a tricky to get tidy. 
 
+**Terminology**: the dataframe with incidents is referred to as chornicle throughout this documentation. 
+
 
 ## Import incidents
 
 ### Regular Import
 
-* with readr
+In most (lucky) cases you have your incidents in an Excel file or you can grab them from a json API. You can use the packages readxl and jsonlite to get this data into R or RStudio, refer to the respective documentation for these standard cases. There may be specific scenarios though. 
 
-### Scraping
+### Nested Excel FIles
+
+The example below illustrates how to get incidents into a dataframe: the example uses one Excel workbook for each month of incidents and in each workbook, different categories are in each sheet. So you would find: 
+* January.xlsx with sheets
+  * assault
+  * online hatespeech
+  * verbal attack in public space 
+* February.xlsx  
+  * assault
+  * online hatespeech
+  * verbal attack in public space
+  * ...
+
+Specify the path of your Excel files, the function returns the all sheets and files into one single dataframe. 
+
+```{r, eval=FALSE}
+library(readxl)
+
+unnest_sheets <- function(directory = "./data") {
+  
+  # assuming you have your data files in the data directory
+  datafiles <- list.files(directory, full.names = TRUE)
+  chronicle <- tibble()
+  
+  for (i in 1:length(datafiles)) {
+    #open each monthly file
+    datasheets <- readxl::excel_sheets(datafiles[i])
+    
+    for (j in 1:length(datasheets)) {
+      # loop through each thematic sheet in each file
+      sheet <- read_excel(path = datafiles[i], sheet = datasheets[j], skip = 2) %>%
+        janitor::clean_names() %>%
+        #categorical information is not stored in the excel sheet itself but in the sheet name
+        mutate(category = datasheets[j]) %>%
+        #the filename would contain the month of the incident
+        mutate(datafile = datafiles[i])
+      chronicle <- rbind(chronicle, sheet)
+    }
+    message("reading now ", datafiles[i])
+  }
+  return(chronicle)
+}
+```
+
+
+### Images in Excel Files
+
+When violent incidents monitor online hate speech, watchdogs are tempted to document hate speech incidents as screenshots in an Excel file. This function gets these png images and performs basic optical character recognition.
+
+```{r, eval=FALSE}
+library(openxlsx)
+
+get_images <- function(filepath = NULL) {
+  wb  <- openxlsx::loadWorkbook(filepath)
+  imagelist <- tibble(location = wb$media) %>%
+     filter(str_detect(location, ".png$"))
+  text <- tibble()
+  #loop through each image in every file
+  for (k in 1:length(imagelist$location)) {
+    #read image from excel and save temporarily
+    png::writePNG(png::readPNG(imagelist$location[k]), "img.png")
+    #perform OCR for German on image
+    extract <- tesseract::ocr("img.png", engine = tesseract("deu"))
+    tibble(text = extract) %>%
+      mutate(origin = filepath) %>%
+      mutate(imageindex = k) -> text
+    rbind(text, texts) -> texts
+  }
+  return(texts)  
+}
+
+
+```
+
+
+### Web Scraping
+
+Often ,your incidents are locked in an html table on a website. Use rvest and htmltools to extract this data. Below is a commented function to get a list out of multiple html pages into one dataframe. 
+
+```{r eval=FALSE}
+
+page_scrape <- function(i) {
+  doc <- read_html(paste0("https://www.example.com/incident_chornicle?page=", i))
+  #define parent node where all incidents are inside
+  payload <- html_nodes(doc, css = ".view-content")
+
+  date <- payload %>%
+    html_nodes(.,css = ".date-display-single") %>%
+    html_text() %>%
+    trimws()
+  names(date) <- "date"
+  
+  title <- payload %>%
+    html_nodes(.,css = ".views-field-title") %>%
+    html_text() %>%
+    trimws()
+  names(title) <- "title"
+  
+  descr_text <- payload %>%
+    html_nodes(.,css = ".views-field-body") %>%
+    html_text() %>%
+    trimws()
+  names(descr_text) <- "descr_text"
+  
+  place <- payload %>%
+    html_nodes(.,css = ".views-field-field-chronicle-city") %>%
+    html_text() %>%
+    trimws()
+  names(place) <- "place"
+
+  
+  source_links <- payload %>%
+    html_nodes(.,css = ".views-field-field-chronicle-sources") %>%
+    html_text() %>%
+    trimws()
+  names(source_links) <- "source_links"
+  
+  
+  temp <- tibble(title, date, descr_text, place, source_links)
+  chronicle <- rbind(chronicle, temp)
+  return(chronicle)
+}
+
+# run this function in a loop, depending on the number of pagination
+# set maxpages or obtain it programmatically
+for (i in 1:maxpages) {
+  page_scrape(i)
+  message(i)
+  # sleep for random seconds between 1 and 2
+  Sys.sleep(runif(1, min = 1, max = 2))
+}
+
+```
 
 
 ## Clean incidents
 
 ### Extract dates
 
-#### Your dates are in a mixed format
+For histograms and other time-series visualizations, you should extract different date granularities. 
 
-#### Summarising dates
+```{r, eval=FALSE}
+chronicle <- chronicle %>%
+  # for dates in format day month year 
+  mutate(date = as.Date(lubridate::dmy(date))) %>%
+  mutate(week = as.Date(cut.Date(date, breaks = "week"))) %>%
+  mutate(month = as.Date(cut.Date(date, breaks = "month"))) %>%
+  mutate(year = as.Date(cut.Date(date, breaks = "year")))
+  
+```
 
-* lubridate::month()
 
 ### Source classification
 
 * keeping a classification file or logic. Anything containing Zeitung becomes news. 
 * exploding urls and keep only tlds. 
 
+```{r, eval=FALSE}
+chronicle %>%
+  mutate(source_links = str_remove(source_links, "Quelle:\\s{5}")) %>%
+  # extract top level domain out of source link and remove www
+  mutate(source_name = str_remove(str_extract(source_links, "//.*?(/|$)"), "(//www.|//)")) %>%
+  # classify sources based on extracted top level domain
+  mutate(source_group = case_when(grepl("presseportal", source_name, ignore.case = TRUE) ~ "Presseportal",
+                                  grepl("kleineanfrage|bundestag", source_name, ignore.case = TRUE) ~ "Parlamentarische Anfragen",
+                                  grepl("antifa", source_name, ignore.case = TRUE) ~ "antifa",
+                                  grepl("rundschau|taz|zeitung|allgemeine|anzeiger|news|bote|post|chronik|spiegel", 
+                                        source_name, ignore.case = TRUE) ~ "Zeitungen",
+                                  TRUE ~ "Andere"
+  )) -> chronicle_clean
+```
+
+
 ### Geocoding
 
-* Prepare placestring
-* use udpipe to annotate text and get location names (not really possible, udpipe gives only proper nouns)
-* Geocoding function for nominatim or self-hosted instance
+Geocoding is a complex and these three steps only cover the very basics. 
+* First we add our parent geographic entity to the places in the incident table
+* Then we define a function to ask Openstreetmap Nominatim for coordinates and admin levels
+* Finally we run the function on all places. Note: if your incident table 
+
+```{r, eval=FALSE}
+# if you have incidents only from Berlin, narrow down the query results by providing the administrative entity 
+chronicle_clean <- chronicle_clean %>%
+  mutate(placestring = paste0(place, "+Berlin")) 
+```
+
+
+To speed up the geocoding, you can use your own dockerized Nominatim instance [from here](https://github.com/mediagis/nominatim-docker/) and point the following function to the instance. 
+
+```{r, eval=FALSE}
+#define geocoding function
+geocode <- function(place = NULL){
+  # NOMINATIM SEARCH API URL
+  # use this one if you don't have your own docker nominatim instance
+  src_url <- "https://nominatim.openstreetmap.org/search?q="
+  #src_url <<- "http://nominatim.geocode:8080/search?q="
+  # if more than one field per address, concatenate here
+  addr <- place
+  request <- paste0(src_url, addr, "&format=geocodejson&addressdetails=[1]")
+  if(suppressWarnings(is.null(addr)))
+    return(data.frame())
+  # transformNomiatim response to json
+  response <- 
+    tryCatch(
+      fromJSON(html_text(html_node(read_html(request), "p"))), 
+    error = function(c) return(data.frame())
+    )
+  # Get lon, Lat, Admin6, admin4 from response
+  if (length(response$features$geometry$coordinates[[1]][1]) == 0) {
+    lon <- NA
+  }
+  else {
+    lon <- response$features$geometry$coordinates[[1]][1]  
+  }
+  if (length(response$features$geometry$coordinates[[1]][2]) == 0) {
+    lat <- NA
+  }
+  else {
+    lat <- response$features$geometry$coordinates[[1]][2]  
+  }
+  if (length(response$features$properties$geocoding$admin$level6[[1]]) == 0) {
+    admin6 <- NA
+  }
+  else {
+    admin6 <- response$features$properties$geocoding$admin$level6[[1]]  
+  }
+  if (length(response$features$properties$geocoding$admin$level4[[1]]) == 0) {
+    admin4 <- NA
+  }
+  else {
+    admin4 <- response$features$properties$geocoding$admin$level4[[1]]  
+  }
+  return(data.frame(lat,lon,admin6, admin4))
+}
+
+```
+
+Running this geocode() function on all incidents will take some time and means you will send duplicate queries. If this is an issue, especially when using the public Nominatim instance or paid providers, you  should dplyr::summarise() and dplyr::group_by() before to only geocode unique places.
+
+```{r, eval=FALSE}
+for (i in 1:nrow(chronicle)) {
+  result <- geocode(chronicle_clean$placestring[i])
+  chronicle_geocoded$lat[i] <- result$lat
+  chronicle_geocoded$lon[i] <- result$lon
+  chronicle_geocoded$admin6[i] <- as.character(result$admin6)
+  Sys.sleep(1.5)
+  message(i)
+}
+```
+
+
 
 ## Summarise Incidents
 

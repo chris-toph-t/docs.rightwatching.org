@@ -1,16 +1,37 @@
 # Visualize Incidents
 
 ## Historgram
-* parsed dates
+
+For a quick glimpse, let's visualize incidents across time. make_histogram() takes two arguments: the data to be used and the level of date granularity, i.e. the columns created previously for week, month, year.  
+
+```{r, eval=FALSE}
+make_histogram <- function(data = chronicle, level = month) {
+  data %>%
+    ggplot(aes_string(x=level)) +
+    geom_bar() +
+    scale_x_date() +
+    theme_ipsum() +
+    labs(y = "Anzahl Vorfälle", x = level) 
+}
+```
+
 
 
 ## Hexbin Map
-* locations as lat lon
 
+Once each incident has a latitude and longitude you can plot the density of incidents on map
 
-## Wordcloud sources
-* source column
+```{r, eval=FALSE}
+# for admin boundaries underneath the incidents we need the shape of admin boundaries. this gets county admin levels for Germany
+admin_boundaries <- giscoR::gisco_get_nuts(nuts_level = "3", country = "DEU", resolution = "03", cache = TRUE, update_cache = TRUE) %>%
+      # select counties of only one federal state
+      filter(kreise, str_detect(NUTS_ID, "DEG"))
 
-
-## Sankey Chart
-* categories, e.g. type of incident and type of source
+make_hexbinmap <- function () {
+  ggplot() +
+    geom_sf(data = admin_boundaries, fill = "White") +
+    stat_bin_hex(data = chronicle, aes(x = lon, y = lat, fill = ..count..), alpha = 0.8, binwidth = 0.05) +
+    scale_fill_viridis(option = "C", direction = -1) + 
+    labs(fill = "Incidents in chronicle")
+}
+```

@@ -21,3 +21,15 @@ The purpose of this chapter is to give the right pieces of information to people
 * Population density
 * Facebook social connectedness
 * 
+
+```{r}
+library(giscoR)
+admin_boundaries <- gisco_get_nuts(nuts_level = "3", country = "DEU", resolution = "03", cache = TRUE, update_cache = TRUE) %>%
+      # select counties of only one federal state
+      filter(kreise, str_detect(NUTS_ID, "DEG"))
+
+votes_data <- dg_call(nuts_nr = "3", stat_name = "WAHL09", substat_name = "PART04", year = "2017", parent_chr = bundesland)
+voters_data <- dg_call(nuts_nr = "3", stat_name = "WAHL01", year = "2017", parent_chr = bundesland)
+
+```
+

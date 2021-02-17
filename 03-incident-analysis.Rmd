@@ -1,4 +1,4 @@
-# Incident ANalysis in R {-}
+# Incident Analysis in R {-}
 
 This section is for people who deal with incident data and want to analyze it themselves. This requires you to know about basic conepts of data anlysis and have a functioning R and RStudio running on your computer. 
 
@@ -17,6 +17,7 @@ Incident data is special and needs some common recipes to work in R efficienty. 
 * Places with varying levels of precision and usefulness. They may be geocoded or not, they may be well coded by administrative levels or not. 
 * Descriptions typically containing the bulk of information about perpetrators, victims, modalities of the incident. 
 * Categories often derived out of the description about typologies of violence, victims, etc. 
+* SOurces, somtimes simply as URLS, sometimes just news outlets. 
 
 In this book you will find best practices and common recipes when working with incident data. It will allow you to inspect and sanity-check the data, visualize it in charts and maps and publish results. 
 
