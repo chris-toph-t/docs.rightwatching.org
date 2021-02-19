@@ -1,11 +1,17 @@
 bookdown::gitbook:
   css: style.css
+  includes:
+    in_header: [matomo_script.html]
   config:
     toc:
+      collapse: section
       before: |
         <li><a href="./">Analyse incidents in R</a></li>
       after: |
-        <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
-    edit: https://github.com/rstudio/bookdown-demo/edit/master/%s
+        <li><img src="images/BMBF_eng.png", alt="Funded by the German Ministry of Education and Research"></li>
+    edit:
+      link: https://github.com/chris-toph-t/docs.rightwatching.org/tree/master/%s
+      text: "Edit"
+    sharing: no
     download: ["epub"]
 bookdown::epub_book: default

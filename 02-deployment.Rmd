@@ -1,11 +1,13 @@
-# Deployment
+# (PART) Deployment {-}
 
-This section  shows you how to deploy an instance of the rightwatching shiny app. The app
+# Run Rightwatching {#deployment}
+
+This section shows you how to deploy an instance of the rightwatching shiny app. The app
 * gathers statistics relevant to far-right and racist violence
-* obtains data of far-right and racist violence, either via an API or scraping
+* obtains data of far-right and racist violence, via web scraping
 * visualises incidents together with relevant statistics
 
-## Container I: Get data
+## Container I: Get data 
 
 The first docker container contains all files that need to be fetched for a smooth shiny app experience. This container is not exposed to the user, it only saves data weekly in Rdata files. 
 
@@ -83,6 +85,139 @@ All code for this task resides [in this repository](https://github.com/chris-top
 
 ## Container III: User login
 
-In the tools direcotry of the same repository you can find the shinyproxy Dockerfile and Config.yml file. These are needed for shinyproxy to launch the app.  
+In the tools directory of the same repository you can find the shinyproxy Dockerfile and Config.yml file. These are needed for shinyproxy to launch the app.  
+
+The application.yml is read by Shinyproxy. Adjust all email-related settings. We use a custom template for the login page in the `templates` directory. 
+
+```{bash, eval=FALSE}
+proxy:
+  port: 8080
+  authentication: none
+  template-path: ./templates
+  docker:
+      internal-networking: true
+  specs:
+  - id: shiny-report
+    display-name: Your Report
+    description: Create a Data Report on far-right violence
+    container-cmd: ["R", "-e", "golem::document_and_reload(); options('shiny.port'=3838,shiny.host='0.0.0.0'); rightwatching::run_app()"]
+    container-volumes: ["/root/rightwatching-shiny-app/data/:/build_zone/data/"]
+    container-image: chris1oph/rightwatching
+    container-network: sp-net
+  support:
+    mail-to-address: you@example.com
+    mail-from-address: app@example.com
+  container-log-path: /opt/shinyproxy/logs/
+
+spring:
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: app@example.com
+    password: super_secret_password
+    properties:
+      mail.smtp.starttls.enable: true
+      
+logging:
+  file:
+    /opt/shinyproxy/logs/shinyproxy.log
+
+
+
+```
+
 
 ## Container IV: SSL Encryption
+
+We use the docker image `linuxserver/swag` as NGINX reverse proxy handling SSL before shinyproxy. You will have to adjust your NGINX site conf to something like below. Make sure to adjust `your.sub.domain`:
+
+```{bash, eval=FALSE}
+# redirect all traffic to https
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        server_name app.rightwatching.org;
+        return 301 https://$host$request_uri;
+}
+
+# main server block
+server {
+        listen 443 ssl http2 default_server;
+        listen [::]:443 ssl http2 default_server;
+
+        root /config/www;
+        index index.html index.htm index.php;
+
+        server_name your.sub.domain;
+        # all ssl related config moved to ssl.conf
+        include /config/nginx/ssl.conf;
+
+        client_max_body_size 0;
+
+    location / {
+        proxy_pass          http://shinyproxy:8080;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 600s;
+
+        proxy_redirect    off;
+        proxy_set_header  Host             $http_host;
+        proxy_set_header  X-Real-IP        $remote_addr;
+        proxy_set_header  X-Forwarded-For  $proxy_add_x_forwarded_for;
+        proxy_set_header  X-Forwarded-Proto $scheme;
+        }
+}
+```
+
+
+## Tying it all together: Docker-Compose
+
+The three containers above work well with docker compose: 
+
+* linuxserver/swag is launched and handles SSL for your domain. The NGINX configuration above ensures it forwards all traffic to shinyproxy
+* shinyproxy will take a while to launch. When it's up (`docker logs shinyproxy`), you should be able to access your shinyproxy instance. There, the app(s) specified in application.yml will be available and ready to be launched. 
+
+```{bash, eval=FALSE}
+
+version: "2"
+services:
+  swag:
+    image: linuxserver/swag
+    depends_on:
+      - shinyproxy
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - URL=app.example.com
+      - SUBDOMAINS=
+      - VALIDATION=http
+    volumes:
+      - /root/appdata:/config
+    ports:
+      - 443:443
+      - 80:80
+    networks:
+      - sp-net
+    restart: unless-stopped
+  shinyproxy:
+    image: shinyproxy
+    container_name: shinyproxy
+    expose:
+      - 8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/logs:/opt/shinyproxy/logs/
+    networks:
+      - sp-net
+
+networks:
+  sp-net:
+    name: sp-net
+```
+

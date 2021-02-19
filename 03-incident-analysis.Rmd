@@ -1,9 +1,9 @@
-# Incident Analysis in R {-}
+# (PART) Incident Analysis in R {-}
 
-This section is for people who deal with incident data and want to analyze it themselves. This requires you to know about basic conepts of data anlysis and have a functioning R and RStudio running on your computer. 
+# What are incidents? {#incidents} 
 
+This section is for people who deal with incident data and want to analyse it themselves. This requires you to know about basic concepts of data analysis and have a functioning R and RStudio running on your computer. 
 
-## What do we mean with incidents? {-}
 
 These recipes collected here are mainly to get insights out of violent events. Examples that we have in mind: 
 
@@ -11,30 +11,14 @@ These recipes collected here are mainly to get insights out of violent events. E
 * The Global Terrorism Database (GTD) collects incidents of terrorism and are useful to analyse terrorism trends across time. 
 * In Germany various watchdogs collect chronicles of far-right violence. This book is mainly developed for this dataset but works for others too. 
 
-Incident data is special and needs some common recipes to work in R efficienty. Incident data typically has: 
+Incident data is special and needs some common recipes to work in R efficiently. Incident data typically has: 
 
 * Dates with varying precision and duration (think of an armed attack lasting for days or a hit-and-run attack on refugees in a country)
 * Places with varying levels of precision and usefulness. They may be geocoded or not, they may be well coded by administrative levels or not. 
 * Descriptions typically containing the bulk of information about perpetrators, victims, modalities of the incident. 
 * Categories often derived out of the description about typologies of violence, victims, etc. 
-* SOurces, somtimes simply as URLS, sometimes just news outlets. 
+* SOurces, sometimes simply as URLS, sometimes just news outlets. 
 
 In this book you will find best practices and common recipes when working with incident data. It will allow you to inspect and sanity-check the data, visualize it in charts and maps and publish results. 
 
 
-
-Chapters
-
-* Explore
-
-* Wrangle
-  * Make it tidy
-  * Merge categories somwhat automtically
-  * geocode with nominatim
-
-
-* Visualize
-  * Hexbin Map
-
-* Enrich
-  * add other datapoints: population density

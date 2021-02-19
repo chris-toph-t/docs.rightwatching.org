@@ -3,19 +3,40 @@ title: "R for Incident Analysis"
 author: "Christoph, Jakob and Miki from Rightwatching.org"
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
-output: bookdown::gitbook
 documentclass: book
 github-repo: rstudio/bookdown-demo
 description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
 ---
 
-# Preface
+# Introduction {#intro}
 
 <a href="https://rightwatching.org"><img src="./images/logo.png" width="375" alt="Rightwatching website" class="cover" /></a>
 
+Rightwatching is a project to help counselling organisations and watchdogs to monitor far-right and racist violence. The project was funded from the German Minstry of Education and Research through the [Prototype Fund](https://prototypefund.de). 
+
 This book is for two purposes: 
 
-* You can use the deployment section to run your own instance of a dockerized shiny app scraping and analysing far-right violence. 
-* You can use the incident analysis section to get R scripts and snippets to create charts and maps out of your own incident data. If you have a data file with your own incidents, head there. 
+* You can use the chapter \@ref(deployment) to run your own instance of a dockerized shiny app scraping and analysing far-right violence. 
+* You can use the chapter \@ref(wrangle) for R scripts and snippets to create charts and maps out of your own incident data. If you have a data file with your own incidents, head there.
+
+## How to use this book
+
+This book is mainly written for people who deal with - often violent - incidents. Read more about our concept of incident data here \@ref(incidents)
+
+Throughout this book we use the term chronicle for a table of incidents. We mainly focus on generating publication-oriented static charts and maps. 
+
+* The chapter \@ref(wrangle) will guide how to get your incidents into such a table. 
+* The chapter \@ref(visualize) will show you some basic charts and maps to generate out of your incident data. 
+* The chapter \@ref(contextualize) has some recipes for external data (i.e. not your own incident data) to enhance your incident data. 
+* The chapter \@ref(verify) provides some quick methods to check your incidents against 
+
+## Does it need such a book? 
+
+We believe incident monitoring is critical in many areas. Many chapters of this book have been inspired from work in armed conflict and monitoring of racist and right-wing violence. Any sort of incidents with an impact on humans could benefit from the recipes in this book. 
 
 
+
+```{r, include=F}
+knitr::opts_chunk$set(echo=T, warning = F, message = F)
+
+```
