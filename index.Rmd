@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
 github-repo: rstudio/bookdown-demo
-description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+description: "Analyzing violent incidents. This is the documentation for the rightwatching app focusing on data of far-right violence in Germany. "
 ---
 
 # Introduction {#intro}
@@ -14,10 +14,11 @@ description: "This is a minimal example of using the bookdown package to write a
 
 Rightwatching is a project to help counselling organisations and watchdogs to monitor far-right and racist violence. The project was funded from the German Minstry of Education and Research through the [Prototype Fund](https://prototypefund.de). 
 
-This book is for two purposes: 
+This book is for three purposes: 
 
-* You can use the chapter \@ref(deployment) to run your own instance of a dockerized shiny app scraping and analysing far-right violence. 
-* You can use the chapter \@ref(wrangle) for R scripts and snippets to create charts and maps out of your own incident data. If you have a data file with your own incidents, head there.
+* Head to chapter \@ref(usage) if you're a user of [our app](https://app.rightwatching.org). 
+* You can use the chapter \@ref(deployment) to run your own instance of a dockerized shiny app obtaining and analysing far-right violence. This requires some technical background and a server. 
+* You can use the chapter \@ref(wrangle) for R scripts and snippets to create charts and maps out of your own incident data. If you have a data file with your own incidents, head there. You should know a bit about the R programming language. 
 
 ## How to use this book
 

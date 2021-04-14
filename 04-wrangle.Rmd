@@ -34,10 +34,10 @@ For this book we use a dataframe of incidents in CSV format, looking like this:
 
 ```{r, echo=FALSE}
 
-chronicle <- readr::read_csv(file.path("data", "dummy_chronicle_raw.csv"))
+chronicle <- readr::read_csv(file.path("data", "dummy_chronicle.csv"))
 
 knitr::kable(
-  head(chronicle, 10), caption = 'Your list of incidents may look like this'
+  tail(select(chronicle, date, description, url, city, state, source_name), 5), caption = 'Your list of incidents may look like this'
 )
 ```
 
@@ -46,10 +46,9 @@ After this chapter, you will have a dataframe of incidents looking like this:
 
 ```{r}
 library(knitr, readr)
-chronicle <- readr::read_csv(file.path("data", "dummy_chronicle.csv"))
-
+chronicle <- readr::read_csv(file.path("data", "dummy_chronicle.csv")) 
 knitr::kable(
-  head(chronicle, 10), caption = 'Your list of incidents could look like this later'
+  tail(select(chronicle, date, description, url, city, state, longitude, latitude, source_name, source_group), 5), caption = 'Your list of incidents could look like this later'
 )
 ```
 

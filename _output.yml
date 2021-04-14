@@ -8,7 +8,7 @@ bookdown::gitbook:
       before: |
         <li><a href="./">Analyse incidents in R</a></li>
       after: |
-        <li><img src="images/BMBF_eng.png", alt="Funded by the German Ministry of Education and Research"></li>
+        <li><img src="images/BMBF_eng.png", alt="Funded by the German Ministry of Education and Research">Funded from September 2020 - February 2021</li>
     edit:
       link: https://github.com/chris-toph-t/docs.rightwatching.org/tree/master/%s
       text: "Edit"

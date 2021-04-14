@@ -9,7 +9,7 @@ These recipes collected here are mainly to get insights out of violent events. E
 
 * The Armed Conflict and Events Database (ACLED) contains violent or strategic incident of armed conflict and are especially useful for humanitarian actors. 
 * The Global Terrorism Database (GTD) collects incidents of terrorism and are useful to analyse terrorism trends across time. 
-* In Germany various watchdogs collect chronicles of far-right violence. This book is mainly developed for this dataset but works for others too. 
+* In Germany various watchdogs collect chronicles of far-right violence. This book is mainly developed for this dataset but works for others too. [Here](data.tatortrechts.de/) you can access the dataset of far-right violence provided by Tatort Rechts. 
 
 Incident data is special and needs some common recipes to work in R efficiently. Incident data typically has: 
 
